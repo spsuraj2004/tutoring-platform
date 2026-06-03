@@ -89,42 +89,45 @@ function StudentDashboard() {
               },
             ],
           });
-          peerConnection.current.onconnectionstatechange =
+
+        peerConnection.current.onconnectionstatechange =
           () => {
             console.log(
               "Connection State:",
-              peerConnection.current.oniceconnectionstatechange =
-              () => {
-                console.log(
-                  "ICE State:",
-                  peerConnection.current.iceConnectionState
-                
-                );
-              }
+              peerConnection.current.connectionState
             );
           };
 
-        await peerConnection.current.setRemoteDescription(
-          offer
-        );
-        
-
-        peerConnection.current.ontrack =
-          (event) => {
+        peerConnection.current.oniceconnectionstatechange =
+          () => {
             console.log(
-              "TRACK RECEIVED",
-              event.streams
+              "ICE State:",
+              peerConnection.current.iceConnectionState
             );
-            if (
-              remoteVideoRef.current
-            ) {
-              remoteVideoRef.current.srcObject =
-                event.streams[0];
-                console.log(
-                  "VIDEO ATTACHED"
-                );
-            }
           };
+
+        // Set up ontrack BEFORE setRemoteDescription so we don't miss the event
+        peerConnection.current.ontrack = (event) => {
+          console.log(
+            "REMOTE TRACK RECEIVED",
+            event
+          );
+
+          console.log(
+            "STREAMS:",
+            event.streams
+          );
+
+          if (
+            remoteVideoRef.current &&
+            event.streams[0]
+          ) {
+            remoteVideoRef.current.srcObject =
+              event.streams[0];
+
+            remoteVideoRef.current.play().catch(() => {});
+          }
+        };
 
         peerConnection.current.onicecandidate =
           (event) => {
@@ -144,19 +147,11 @@ function StudentDashboard() {
               );
             }
           };
-          peerConnection.current.addTransceiver(
-            "video",
-            {
-                 direction: "recvonly",
-            }
-          );
-          peerConnection.current.addTransceiver(
-            "audio",
-            {
-              direction: "recvonly",
-            }
-          );
-          
+
+        await peerConnection.current.setRemoteDescription(
+          new RTCSessionDescription(offer)
+        );
+
         const answer =
           await peerConnection.current.createAnswer();
 
