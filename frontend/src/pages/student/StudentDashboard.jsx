@@ -318,17 +318,17 @@ function StudentDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
+    <div className="min-h-screen bg-gradient-to-br from-black via-zinc-950 to-red-950 text-white p-8">
 
       <div className="flex justify-between items-center mb-10">
 
-        <h1 className="text-4xl font-bold">
+        <h1 className="text-4xl font-bold text-red-500">
           Student Dashboard
         </h1>
 
         <div className="flex gap-4">
 
-          <div className="bg-zinc-900 px-4 py-2 rounded-xl">
+          <div className="bg-zinc-900 border border-red-700 shadow-lg shadow-red-900/30 px-4 py-2 rounded-xl">
             {currentStudent}
           </div>
 
@@ -345,7 +345,7 @@ function StudentDashboard() {
 
       </div>
 
-      <div className="bg-zinc-900 p-6 rounded-2xl mb-8">
+      <div className="bg-zinc-900 border border-red-700 shadow-lg shadow-red-900/30 p-6 rounded-2xl mb-8">
 
         <h2 className="text-2xl mb-4">
           Assigned Tutor
@@ -363,7 +363,7 @@ function StudentDashboard() {
 
       <div className="grid grid-cols-2 gap-8">
 
-        <div className="bg-zinc-900 p-6 rounded-2xl">
+        <div className="bg-zinc-900 border border-red-700 shadow-lg shadow-red-900/30 p-6 rounded-2xl">
 
           <h2 className="text-2xl mb-4">
             Live Session
@@ -389,7 +389,7 @@ function StudentDashboard() {
 
         </div>
 
-        <div className="bg-zinc-900 p-6 rounded-2xl flex flex-col">
+        <div className="bg-zinc-900 border border-red-700 shadow-lg shadow-red-900/30 p-6 rounded-2xl flex flex-col">
 
           <h2 className="text-2xl mb-4">
             Private Chat

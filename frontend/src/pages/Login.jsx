@@ -96,7 +96,7 @@ function Login() {
   return (
     <div className="h-screen bg-black flex items-center justify-center">
 
-      <div className="bg-zinc-900 p-10 rounded-2xl w-96 shadow-2xl">
+      <div className="bg-zinc-900 border border-red-700 shadow-lg shadow-red-900/30 p-10 rounded-2xl w-96 shadow-2xl">
 
         <h1 className="text-white text-3xl font-bold mb-8 text-center">
           Tution4All
