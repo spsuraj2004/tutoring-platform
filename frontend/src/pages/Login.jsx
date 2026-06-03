@@ -110,6 +110,9 @@ function Login() {
           onChange={(e) =>
             setEmail(e.target.value)
           }
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleLogin();
+          }}
           className="w-full p-3 mb-4 rounded-xl bg-zinc-800 text-white outline-none"
         />
 
@@ -121,6 +124,9 @@ function Login() {
           onChange={(e) =>
             setPassword(e.target.value)
           }
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleLogin();
+          }}
           className="w-full p-3 mb-6 rounded-xl bg-zinc-800 text-white outline-none"
         />
 

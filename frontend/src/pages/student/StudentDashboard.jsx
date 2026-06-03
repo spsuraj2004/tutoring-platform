@@ -32,11 +32,20 @@ function StudentDashboard() {
   const [messages, setMessages] =
     useState([]);
 
+  const [sessionStatus, setSessionStatus] =
+    useState("idle"); // "idle" | "joined" | "ended"
+
   const remoteVideoRef =
     useRef(null);
 
   const peerConnection =
     useRef(null);
+
+  const pendingOffer =
+    useRef(null);
+
+  const pendingIceCandidates =
+    useRef([]);
 
   const currentStudent =
     currentUser?.name;
@@ -52,6 +61,111 @@ function StudentDashboard() {
     assignedSession
       ? `${assignedSession.tutor}-${assignedSession.student}`
       : null;
+
+  const connectToTutor = async (offer) => {
+    peerConnection.current =
+      new RTCPeerConnection({
+        iceServers: [
+          {
+            urls:
+              "stun:stun.l.google.com:19302",
+          },
+        ],
+      });
+
+    peerConnection.current.onconnectionstatechange =
+      () => {
+        console.log(
+          "Connection State:",
+          peerConnection.current.connectionState
+        );
+      };
+
+    peerConnection.current.oniceconnectionstatechange =
+      () => {
+        console.log(
+          "ICE State:",
+          peerConnection.current.iceConnectionState
+        );
+      };
+
+    // Set up ontrack BEFORE setRemoteDescription so we don't miss the event
+    peerConnection.current.ontrack = (event) => {
+      console.log(
+        "REMOTE TRACK RECEIVED",
+        event
+      );
+
+      console.log(
+        "STREAMS:",
+        event.streams
+      );
+
+      if (
+        remoteVideoRef.current &&
+        event.streams[0]
+      ) {
+        remoteVideoRef.current.srcObject =
+          event.streams[0];
+
+        remoteVideoRef.current.play().catch(() => {});
+      }
+    };
+
+    peerConnection.current.onicecandidate =
+      (event) => {
+        if (
+          event.candidate
+        ) {
+          console.log(
+            "STUDENT ICE GENERATED"
+          );
+          socket.emit(
+            "ice-candidate",
+            {
+              roomId,
+              candidate:
+                event.candidate,
+            }
+          );
+        }
+      };
+
+    await peerConnection.current.setRemoteDescription(
+      new RTCSessionDescription(offer)
+    );
+
+    // Add any ICE candidates that arrived before we joined
+    for (const candidate of pendingIceCandidates.current) {
+      try {
+        await peerConnection.current.addIceCandidate(
+          new RTCIceCandidate(candidate)
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    pendingIceCandidates.current = [];
+
+    const answer =
+      await peerConnection.current.createAnswer();
+
+    await peerConnection.current.setLocalDescription(
+      answer
+    );
+
+    socket.emit(
+      "answer",
+      {
+        roomId,
+        answer,
+      }
+    );
+
+    console.log(
+      "Answer Sent"
+    );
+  };
 
   useEffect(() => {
     if (!roomId) return;
@@ -73,103 +187,14 @@ function StudentDashboard() {
       }
     );
 
-    // Tutor sends offer
+    // Tutor sends offer — store it, don't auto-connect
     socket.on(
       "offer",
-      async ({ offer }) => {
+      ({ offer }) => {
         console.log(
-          "OFFER RECEIVED"
+          "OFFER RECEIVED (stored, waiting for Join)"
         );
-        peerConnection.current =
-          new RTCPeerConnection({
-            iceServers: [
-              {
-                urls:
-                  "stun:stun.l.google.com:19302",
-              },
-            ],
-          });
-
-        peerConnection.current.onconnectionstatechange =
-          () => {
-            console.log(
-              "Connection State:",
-              peerConnection.current.connectionState
-            );
-          };
-
-        peerConnection.current.oniceconnectionstatechange =
-          () => {
-            console.log(
-              "ICE State:",
-              peerConnection.current.iceConnectionState
-            );
-          };
-
-        // Set up ontrack BEFORE setRemoteDescription so we don't miss the event
-        peerConnection.current.ontrack = (event) => {
-          console.log(
-            "REMOTE TRACK RECEIVED",
-            event
-          );
-
-          console.log(
-            "STREAMS:",
-            event.streams
-          );
-
-          if (
-            remoteVideoRef.current &&
-            event.streams[0]
-          ) {
-            remoteVideoRef.current.srcObject =
-              event.streams[0];
-
-            remoteVideoRef.current.play().catch(() => {});
-          }
-        };
-
-        peerConnection.current.onicecandidate =
-          (event) => {
-            if (
-              event.candidate
-            ) {
-              console.log(
-                "STUDENT ICE GENERATED"
-              );
-              socket.emit(
-                "ice-candidate",
-                {
-                  roomId,
-                  candidate:
-                    event.candidate,
-                }
-              );
-            }
-          };
-
-        await peerConnection.current.setRemoteDescription(
-          new RTCSessionDescription(offer)
-        );
-
-        const answer =
-          await peerConnection.current.createAnswer();
-
-        await peerConnection.current.setLocalDescription(
-          answer
-        );
-
-        socket.emit(
-          "answer",
-          {
-            roomId,
-            answer,
-          }
-        );
-
-        console.log(
-          "Answer Sent"
-        );
+        pendingOffer.current = offer;
       }
     );
 
@@ -199,6 +224,9 @@ function StudentDashboard() {
               err
             );
           }
+        } else if (candidate) {
+          // Store ICE candidates until student joins
+          pendingIceCandidates.current.push(candidate);
         }
       }
     );
@@ -222,9 +250,9 @@ function StudentDashboard() {
             null;
         }
 
-        alert(
-          "Tutor has ended the session."
-        );
+        pendingOffer.current = null;
+        pendingIceCandidates.current = [];
+        setSessionStatus("ended");
       }
     );
 
@@ -250,18 +278,15 @@ function StudentDashboard() {
   const startSession =
     async () => {
       try {
-        const stream =
-          await navigator.mediaDevices.getUserMedia(
-            {
-              video: true,
-              audio: true,
-            }
-          );
+        if (!pendingOffer.current) {
+          alert("Tutor has not started the session yet.");
+          return;
+        }
 
-        console.log(
-          "Student media stream started",
-          stream
-        );
+        setSessionStatus("joined");
+        await connectToTutor(pendingOffer.current);
+        pendingOffer.current = null;
+
         console.log(
           "Room:",
           roomId
@@ -296,6 +321,12 @@ function StudentDashboard() {
     );
 
     setMessage("");
+  };
+
+  const handleChatKeyDown = (e) => {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
   };
 
   const handleLogout = () => {
@@ -364,22 +395,35 @@ function StudentDashboard() {
             Live Session
           </h2>
 
-          <video
-            ref={
-              remoteVideoRef
-            }
-            autoPlay
-            playsInline
-            className="w-full h-96 bg-zinc-800 rounded-xl"
-          />
+          {sessionStatus === "ended" ? (
+            <div className="w-full h-96 bg-zinc-800 rounded-xl flex items-center justify-center">
+              <p className="text-2xl font-semibold text-red-400">
+                Session Ended
+              </p>
+            </div>
+          ) : (
+            <video
+              ref={
+                remoteVideoRef
+              }
+              autoPlay
+              playsInline
+              className="w-full h-96 bg-zinc-800 rounded-xl"
+            />
+          )}
 
           <button
             onClick={
               startSession
             }
-            className="w-full mt-6 bg-blue-600 p-3 rounded-xl"
+            disabled={sessionStatus === "joined" || sessionStatus === "ended"}
+            className="w-full mt-6 bg-blue-600 hover:bg-blue-700 transition-all duration-300 p-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Join Session
+            {sessionStatus === "joined"
+              ? "Joined"
+              : sessionStatus === "ended"
+              ? "Session Ended"
+              : "Join Session"}
           </button>
 
         </div>
@@ -446,6 +490,9 @@ function StudentDashboard() {
                   e.target.value
                 )
               }
+              onKeyDown={
+                handleChatKeyDown
+              }
               type="text"
               placeholder="Ask your doubt..."
               className="flex-1 p-3 rounded-xl bg-zinc-800"
@@ -455,7 +502,7 @@ function StudentDashboard() {
               onClick={
                 sendMessage
               }
-              className="bg-blue-600 px-6 rounded-xl"
+              className="bg-blue-600 hover:bg-blue-700 transition-all duration-300 px-6 rounded-xl font-semibold"
             >
               Send
             </button>

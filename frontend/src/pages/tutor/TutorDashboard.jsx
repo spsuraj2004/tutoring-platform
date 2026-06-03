@@ -186,7 +186,18 @@ function TutorDashboard() {
         null;
     }
 
+    // Notify student that session has ended
+    if (roomId) {
+      socket.emit("end-session", roomId);
+    }
+
     console.log("Session Ended");
+  };
+
+  const handleChatKeyDown = (e) => {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
   };
 
   const sendMessage = () => {
@@ -293,7 +304,7 @@ function TutorDashboard() {
               onClick={
                 startSession
               }
-              className="flex-1 bg-green-600 p-3 rounded-xl"
+              className="flex-1 bg-green-600 hover:bg-green-700 transition-all duration-300 p-3 rounded-xl font-semibold"
             >
               Start Session
             </button>
@@ -302,7 +313,7 @@ function TutorDashboard() {
               onClick={
                 endSession
               }
-              className="flex-1 bg-red-600 p-3 rounded-xl"
+              className="flex-1 bg-red-600 hover:bg-red-700 transition-all duration-300 p-3 rounded-xl font-semibold"
             >
               End Session
             </button>
@@ -360,6 +371,9 @@ function TutorDashboard() {
                   e.target.value
                 )
               }
+              onKeyDown={
+                handleChatKeyDown
+              }
               type="text"
               placeholder="Type message..."
               className="flex-1 p-3 rounded-xl bg-zinc-800"
@@ -369,7 +383,7 @@ function TutorDashboard() {
               onClick={
                 sendMessage
               }
-              className="bg-blue-600 px-6 rounded-xl"
+              className="bg-blue-600 hover:bg-blue-700 transition-all duration-300 px-6 rounded-xl font-semibold"
             >
               Send
             </button>
