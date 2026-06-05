@@ -1,5 +1,6 @@
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 import { AssignmentContext } from "../../context/AssignmentContext";
 
@@ -12,6 +13,7 @@ function AdminDashboard() {
     students,
     assignments,
     setAssignments,
+    fetchAssignments,
     setCurrentUser,
   } = useContext(AssignmentContext);
 
@@ -30,38 +32,45 @@ function AdminDashboard() {
   };
 
   // Assign Tutor + Student
-  const handleAssign = () => {
+  const handleAssign = async () => {
 
     if (!selectedTutor || !selectedStudent) {
       alert("Select tutor and student");
       return;
     }
 
-    // Remove old assignment of tutor
-    const filteredAssignments =
-      assignments.filter(
-        (assignment) =>
-          assignment.tutor !== selectedTutor &&
-          assignment.student !== selectedStudent
+    try {
+      // Find old assignments involving this tutor or student
+      const oldAssignments = assignments.filter(
+        (a) => a.tutor === selectedTutor || a.student === selectedStudent
       );
 
-    // New assignment
-    const newAssignment = {
-      tutor: selectedTutor,
-      student: selectedStudent,
-    };
+      // Delete old assignments from backend
+      for (const old of oldAssignments) {
+        if (old._id) {
+          await axios.delete(`https://tutoring-platform-2ach.onrender.com/sessions/${old._id}`);
+        }
+      }
 
-    // Update assignments
-    setAssignments([
-      ...filteredAssignments,
-      newAssignment,
-    ]);
+      // New assignment
+      await axios.post("https://tutoring-platform-2ach.onrender.com/sessions", {
+        tutorId: selectedTutor,
+        studentId: selectedStudent,
+        subject: "General"
+      });
 
-    // Reset selection
-    setSelectedTutor("");
-    setSelectedStudent("");
+      // Fetch updated assignments
+      await fetchAssignments();
 
-    alert("Session Assigned Successfully");
+      // Reset selection
+      setSelectedTutor("");
+      setSelectedStudent("");
+
+      alert("Session Assigned Successfully");
+    } catch (error) {
+      console.error("Error assigning session:", error);
+      alert("Failed to assign session");
+    }
   };
 
   return (
