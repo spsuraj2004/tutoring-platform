@@ -9,7 +9,6 @@ function TutorDashboard() {
 
   const {
     assignments,
-    loading,
     currentUser,
     setCurrentUser,
   } = useContext(AssignmentContext);
@@ -274,13 +273,11 @@ function TutorDashboard() {
         </h2>
 
         <div className="bg-zinc-800 p-4 rounded-xl">
-          {loading ? (
-            <span className="text-zinc-400">Loading assignments...</span>
-          ) : assignedSession ? (
-            assignedSession.student
-          ) : (
-            "No Student Assigned"
-          )}
+
+          {assignedSession
+            ? assignedSession.student
+            : "No Student Assigned"}
+
         </div>
 
       </div>

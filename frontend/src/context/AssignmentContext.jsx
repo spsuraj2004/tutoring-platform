@@ -3,7 +3,6 @@ import {
   useEffect,
   useState,
 } from "react";
-import axios from "axios";
 
 export const AssignmentContext =
   createContext();
@@ -38,32 +37,32 @@ console.log(
   ];
 
   // Assignments
-  const [assignments, setAssignments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [assignments, setAssignments] =
+    useState(() => {
 
-  // Fetch assignments from backend
-  const fetchAssignments = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get("https://tutoring-platform-2ach.onrender.com/sessions");
-      // Map backend data to frontend expected format
-      const mappedAssignments = response.data.map(session => ({
-        _id: session._id,
-        tutor: session.tutorId,
-        student: session.studentId
-      }));
-      setAssignments(mappedAssignments);
-    } catch (error) {
-      console.error("Error fetching assignments:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const savedAssignments =
+        localStorage.getItem(
+          "assignments"
+        );
 
-  // Fetch on mount
+      return savedAssignments
+        ? JSON.parse(
+            savedAssignments
+          )
+        : [];
+    });
+
+  // Save assignments automatically
   useEffect(() => {
-    fetchAssignments();
-  }, []);
+
+    localStorage.setItem(
+      "assignments",
+      JSON.stringify(
+        assignments
+      )
+    );
+
+  }, [assignments]);
 
   // Save current user automatically
   useEffect(() => {
@@ -93,8 +92,6 @@ console.log(
         students,
         assignments,
         setAssignments,
-        loading,
-        fetchAssignments,
         currentUser,
         setCurrentUser,
       }}

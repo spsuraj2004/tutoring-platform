@@ -1,6 +1,5 @@
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 
 import { AssignmentContext } from "../../context/AssignmentContext";
 
@@ -12,9 +11,7 @@ function AdminDashboard() {
     tutors,
     students,
     assignments,
-    loading,
     setAssignments,
-    fetchAssignments,
     setCurrentUser,
   } = useContext(AssignmentContext);
 
@@ -33,45 +30,38 @@ function AdminDashboard() {
   };
 
   // Assign Tutor + Student
-  const handleAssign = async () => {
+  const handleAssign = () => {
 
     if (!selectedTutor || !selectedStudent) {
       alert("Select tutor and student");
       return;
     }
 
-    try {
-      // Find old assignments involving this tutor or student
-      const oldAssignments = assignments.filter(
-        (a) => a.tutor === selectedTutor || a.student === selectedStudent
+    // Remove old assignment of tutor
+    const filteredAssignments =
+      assignments.filter(
+        (assignment) =>
+          assignment.tutor !== selectedTutor &&
+          assignment.student !== selectedStudent
       );
 
-      // Delete old assignments from backend
-      for (const old of oldAssignments) {
-        if (old._id) {
-          await axios.delete(`https://tutoring-platform-2ach.onrender.com/sessions/${old._id}`);
-        }
-      }
+    // New assignment
+    const newAssignment = {
+      tutor: selectedTutor,
+      student: selectedStudent,
+    };
 
-      // New assignment
-      await axios.post("https://tutoring-platform-2ach.onrender.com/sessions", {
-        tutorId: selectedTutor,
-        studentId: selectedStudent,
-        subject: "General"
-      });
+    // Update assignments
+    setAssignments([
+      ...filteredAssignments,
+      newAssignment,
+    ]);
 
-      // Fetch updated assignments
-      await fetchAssignments();
+    // Reset selection
+    setSelectedTutor("");
+    setSelectedStudent("");
 
-      // Reset selection
-      setSelectedTutor("");
-      setSelectedStudent("");
-
-      alert("Session Assigned Successfully");
-    } catch (error) {
-      console.error("Error assigning session:", error);
-      alert("Failed to assign session");
-    }
+    alert("Session Assigned Successfully");
   };
 
   return (
@@ -165,14 +155,12 @@ function AdminDashboard() {
           Current Assignments
         </h2>
 
-        {loading ? (
-          <div className="bg-zinc-800 p-4 rounded-xl text-zinc-400">
-            Loading assignments from server...
-          </div>
-        ) : assignments.length === 0 ? (
+        {assignments.length === 0 ? (
+
           <div className="bg-zinc-800 p-4 rounded-xl text-zinc-400">
             No Sessions Assigned
           </div>
+
         ) : (
 
           <div className="space-y-4">
