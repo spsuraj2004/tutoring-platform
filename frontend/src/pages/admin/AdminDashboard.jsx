@@ -12,6 +12,7 @@ function AdminDashboard() {
     tutors,
     students,
     assignments,
+    loading,
     setAssignments,
     fetchAssignments,
     setCurrentUser,
@@ -164,12 +165,14 @@ function AdminDashboard() {
           Current Assignments
         </h2>
 
-        {assignments.length === 0 ? (
-
+        {loading ? (
+          <div className="bg-zinc-800 p-4 rounded-xl text-zinc-400">
+            Loading assignments from server...
+          </div>
+        ) : assignments.length === 0 ? (
           <div className="bg-zinc-800 p-4 rounded-xl text-zinc-400">
             No Sessions Assigned
           </div>
-
         ) : (
 
           <div className="space-y-4">

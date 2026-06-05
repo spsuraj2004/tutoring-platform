@@ -39,10 +39,12 @@ console.log(
 
   // Assignments
   const [assignments, setAssignments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Fetch assignments from backend
   const fetchAssignments = async () => {
     try {
+      setLoading(true);
       const response = await axios.get("https://tutoring-platform-2ach.onrender.com/sessions");
       // Map backend data to frontend expected format
       const mappedAssignments = response.data.map(session => ({
@@ -53,6 +55,8 @@ console.log(
       setAssignments(mappedAssignments);
     } catch (error) {
       console.error("Error fetching assignments:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,6 +93,7 @@ console.log(
         students,
         assignments,
         setAssignments,
+        loading,
         fetchAssignments,
         currentUser,
         setCurrentUser,
