@@ -36,7 +36,7 @@ function Login() {
 
       const response =
         await axios.post(
-          "http://localhost:3000/auth/login",
+          "https://tutoring-platform-kcl0kw805-spsuraj2004s-projects.vercel.app/auth/login",
           {
             email,
             password,

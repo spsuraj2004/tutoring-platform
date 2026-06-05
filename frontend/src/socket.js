@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 
 const socket = io(
-  "http://localhost:3000",
+  "https://tutoring-platform-kcl0kw805-spsuraj2004s-projects.vercel.app/",
   {
     transports: ["websocket"],
   }
