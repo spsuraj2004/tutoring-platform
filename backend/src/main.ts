@@ -7,7 +7,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:5173',
-      'https://tutoring-platform-lac.vercel.app/',
+      'https://tutoring-platform-kcl0kw805-spsuraj2004s-projects.vercel.app',
     ],
     credentials: true,
   });
